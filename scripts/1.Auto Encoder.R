@@ -1,4 +1,4 @@
- 
+library(keras) 
 load('data.model.all.rda')  %>% print()
 
 
@@ -41,14 +41,20 @@ y_evaluate <- df_evaluation_target
 # alternative
 #https://blog.keras.io/building-autoencoders-in-keras.html
 
-input_data= layer_input(shape=ncol(x_train))
-encoded = layer_dense(units =20, activation='relu')(input_data)
-encoded = layer_dense(units =15, activation='relu')(encoded)
-encoded = layer_dense(units =10, activation='relu')(encoded)
+FLAGS <- flags(
+  flag_numeric("regularizer_1", 0.000),
+  flag_numeric("regularizer_2", 0.000),
+  flag_numeric("regularizer_3", 0.000)
+)
 
-decoded = layer_dense(units =10, activation='relu')(encoded)
-decoded = layer_dense(units =15, activation='relu')(decoded)
-decoded = layer_dense(units = ncol(x_train))(decoded)
+input_data= layer_input(shape=ncol(x_train))
+encoded = layer_dense(units =20, activation='relu',kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_1)) (input_data)
+encoded = layer_dense(units =15, activation='relu',kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_2))(encoded)
+encoded = layer_dense(units =10, activation='relu',kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_3))(encoded)
+
+decoded = layer_dense(units =10, activation='relu',kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_3))(encoded)
+decoded = layer_dense(units =15, activation='relu',kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_2))(decoded)
+decoded = layer_dense(units = ncol(x_train),kernel_regularizer = regularizer_l1(l =FLAGS$regularizer_1))(decoded)
 
 autoencoder = keras_model(inputs = input_data, outputs =decoded)
 supervised = keras_model(inputs=input_data, output=encoded)
@@ -74,15 +80,16 @@ autoencoder %>% fit(
   x = x_train[y_train == 0,], 
   y = x_train[y_train == 0,], 
   epochs = 100, 
-  batch_size = 128,
+  batch_size = 1014,
   shuffle=TRUE,
+  verbose=2,
   validation_data = list(x_evaluate[y_evaluate == 0,], x_evaluate[y_evaluate == 0,]), 
   callbacks = list(checkpoint, early_stopping)
 )
 
 
-loss <- evaluate(autoencoder, x = x_test[y_test == 0,], y = x_test[y_test == 0,])
-loss
+#loss <- evaluate(autoencoder, x = x_test[y_test == 0,], y = x_test[y_test == 0,])
+#loss
 
 supervised %>% save_model_hdf5("ancoder.model.hdf5")
 

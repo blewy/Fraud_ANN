@@ -143,7 +143,7 @@ x_train.ub<-down_train$data %>% select(-Class) %>%  as.matrix
 y_train.ub<-ifelse(down_train$data$Class=="0",0,1)
 
 
-#tensorboard("my_log_dir")
+tensorboard("my_log_dir")
 history <-model %>% fit(
   x = x_train.ub, 
   y = y_train.ub, 
